@@ -196,6 +196,7 @@ uint16_t measure_level(){
 		if(flag){
 			stop_measure();
 			flag = 0;
+			result = ICR1;			// save the result
 			return result;
 		} 
 		if(error){
@@ -222,7 +223,7 @@ void stop_measure(){
 
 ISR(TIMER1_CAPT_vect){		// The Comperator triggered the Input Capture event
 	flag = 1;				// set the event.
-	result = ICR1;			// save the result
+	//result = ICR1;			// save the result
 	return;
 }
 

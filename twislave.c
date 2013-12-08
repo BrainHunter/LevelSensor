@@ -52,6 +52,8 @@
 #include "config.h"
 #include "level_sensor.h"
 
+//#define TWI_DEBUG
+
 //#################################### Macros
 //ACK nach empfangenen Daten senden/ ACK nach gesendeten Daten erwarten
 #define TWCR_ACK 	TWCR = (1<<TWEN)|(1<<TWIE)|(1<<TWINT)|(1<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|(0<<TWWC);  
@@ -63,6 +65,9 @@
 #define TWCR_RESET 	TWCR = (1<<TWEN)|(1<<TWIE)|(1<<TWINT)|(1<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|(0<<TWWC);  
 
 volatile uint8_t command = 0;
+#ifdef TWI_DEBUG
+volatile uint8_t TwiIsr = 0;
+#endif
 
 #define buffer_size sizeof(ls_config) + 4
 
@@ -86,6 +91,10 @@ ISR (TWI_vect)
 	config = get_config();
 	
 	uint8_t data=0;
+	
+	#ifdef TWI_DEBUG
+	TwiIsr = TW_STATUS;
+	#endif
 	
 	switch (TW_STATUS) 								// TWI-Statusregister prüfen und nötige Aktion bestimmen 
 		{
@@ -111,7 +120,7 @@ ISR (TWI_vect)
 			else 									// weiterer Zugriff, Daten empfangen
 				{
 					if(buffer_adr > 3){	
-						*(((uint8_t*)config)+(buffer_adr-2)) = data; 	// Daten in Buffer schreiben
+						*(((uint8_t*)config)+(buffer_adr-4)) = data; 	// Daten in Buffer schreiben
 					}
 					if(buffer_adr == 1){
 						command = data;
@@ -136,16 +145,16 @@ ISR (TWI_vect)
 					buffer_adr=0;
 				}	
 			if(buffer_adr > 3){
-				TWDR = *(((uint8_t*)config)+(buffer_adr-2));		// Datenbyte senden
+				TWDR = *(((uint8_t*)config)+(buffer_adr-4));		// Datenbyte senden
 			}else{
 				switch(buffer_adr){
 					case 0: 	TWDR = convert_to_percent(get_last_level(), config);
 								break;
 					case 1:		TWDR = command;
 								break;
-					case 2:		TWDR = (uint8_t)((get_last_level() >> 8) & 0xFF);			// last raw high byte
+					case 2:		TWDR = (uint8_t)(get_last_level() & 0xFF);			// last raw low byte
 								break;
-					case 3:		TWDR = (uint8_t)(get_last_level() & 0xFF);			// last raw low byte
+					case 3:		TWDR = (uint8_t)((get_last_level() >> 8) & 0xFF);			// last raw high byte
 								break;								
 								
 				}
@@ -189,4 +198,12 @@ void execute_twi_command(){
 					
 	}
 	command = 0;
+	
+	#ifdef TWI_DEBUG
+	if(TwiIsr != 0)
+	{
+		printf("%u\r\n",TwiIsr);
+		TwiIsr = 0;
+	}	
+	#endif
 }

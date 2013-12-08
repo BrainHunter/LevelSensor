@@ -52,7 +52,7 @@ void print_OK(void){
 }
 
 void print_error(void){
-	uart_puts_P("ERROR WHILE MESSURING\r\n");
+	uart_puts_P("ERROR WHILE MESURING\r\n");
 }
 
 void parse(char* buffer){

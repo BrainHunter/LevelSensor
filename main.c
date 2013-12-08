@@ -39,6 +39,7 @@ Version.
 #include <stdio.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 
 #include "level_sensor.h"
 #include "config.h"
@@ -48,8 +49,10 @@ Version.
 Configuration:
 */
  
-#define RS232		// This will enable the RS232 routines
-#define TWI			// This will enable the TWI routines
+#define RS232			// This will enable the RS232 routines
+#define TWI				// This will enable the TWI routines
+
+//#define MEASURE_DEBUG	// Debug message after every automatic measurement
 
 
 #ifdef RS232
@@ -101,7 +104,13 @@ int main (){
 	uint16_t sec_timer = 0;
 	
 	tick = 0;
-	tick_count = 0;
+	ATOMIC_BLOCK(ATOMIC_FORCEON)
+	{
+		tick_count = 0;		// this var has 2 byte.. so do this atomic
+	}
+	
+	uint16_t internal_tick_count;
+	
 	// Init devices
 	init();
 	
@@ -115,7 +124,7 @@ int main (){
 	//uint16_t temp;
 
 	while(1){
-		
+				
 		#ifdef RS232
 		
 		read_uart();
@@ -125,22 +134,36 @@ int main (){
 		execute_twi_command();
 		#endif
 		
-		if(tick){		// this will be executed every 1 ms
+		if(tick) 	// this will be executed every 1 ms
+		{		
 			tick = 0;
 			process_ioAction(config); // io action processing
+		
 			
 		}
 		
-		if(tick_count == 1000){	// this will be executed every 1 sec
-			tick_count = 0;
-			sec_timer++;
-			//printf("sec_timer: %u\r\n", sec_timer);
+		
+		ATOMIC_BLOCK(ATOMIC_FORCEON)
+		{
+			internal_tick_count = tick_count;
 		}
+		if(internal_tick_count >= 1000)	// this will be executed every 1 sec  
+		{	
+			ATOMIC_BLOCK(ATOMIC_FORCEON)
+			{
+				tick_count = 0;
+			}
+			sec_timer++;		// count the seconds for the measure interval
+			//printf("sec_timer: %u\r\n", sec_timer);
+		}	
+		
 		
 		if((sec_timer >= config->measure_interval) && config->measure_interval){
 			sec_timer=0;
 			measure_level();
-			//uart_puts_P("measure level\r\n");
+			#ifdef MEASURE_DEBUG
+			printf("m:%u\r\n",get_last_level());
+			#endif
 		}
 		
 	}

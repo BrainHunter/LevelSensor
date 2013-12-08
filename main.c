@@ -43,16 +43,7 @@ Version.
 
 #include "level_sensor.h"
 #include "config.h"
-
-
-/*
-Configuration:
-*/
- 
-#define RS232			// This will enable the RS232 routines
-#define TWI				// This will enable the TWI routines
-
-//#define MEASURE_DEBUG	// Debug message after every automatic measurement
+#include "main.h" 
 
 
 #ifdef RS232
@@ -155,8 +146,17 @@ int main (){
 			}
 			sec_timer++;		// count the seconds for the measure interval
 			//printf("sec_timer: %u\r\n", sec_timer);
+			
+			
+			#ifdef TWI_TIMEOUT
+			if((++twi_timeout) == 2)	// if we waited for a maximum of 2 sec. reset the twi.
+			{							// 
+				twi_reset();
+				twi_error++;
+			}
+			if(twi_timeout >3) twi_timeout = 3;
+			#endif
 		}	
-		
 		
 		if((sec_timer >= config->measure_interval) && config->measure_interval){
 			sec_timer=0;

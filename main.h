@@ -36,6 +36,19 @@ Version.
 #ifndef MAIN_H
 #define MAIN_H
 
+/*
+Configuration:
+*/
+ 
+#define RS232			// This will enable the RS232 routines
+#define TWI				// This will enable the TWI routines
+#define TWI_TIMEOUT		// Enable a Timeout for TWI
+
+//#define MEASURE_DEBUG	// Debug message after every automatic measurement
+//#define TWI_DEBUG		// Debug messages for TWI
+
+
+
 
 int main(void);
 

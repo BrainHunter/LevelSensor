@@ -51,6 +51,7 @@
 #include "twislave.h" 								
 #include "config.h"
 #include "level_sensor.h"
+#include "main.h"
 
 //#define TWI_DEBUG
 
@@ -67,6 +68,10 @@
 volatile uint8_t command = 0;
 #ifdef TWI_DEBUG
 volatile uint8_t TwiIsr = 0;
+#endif
+#ifdef TWI_TIMEOUT
+volatile uint8_t twi_timeout = 0;
+uint8_t twi_error = 0;
 #endif
 
 #define buffer_size sizeof(ls_config) + 4
@@ -101,6 +106,10 @@ ISR (TWI_vect)
 		case TW_SR_SLA_ACK: 						// 0x60 Slave Receiver, wurde adressiert	
 			TWCR_ACK; 								// nächstes Datenbyte empfangen, ACK danach
 			buffer_adr=0xFF; 						// Bufferposition ist undefiniert
+			#ifdef TWI_TIMEOUT
+			twi_timeout = 0;						// start the timeout counter.
+			#endif	
+			
 			break;
 
 		case TW_SR_DATA_ACK: 						// 0x80 Slave Receiver,Daten empfangen
@@ -177,10 +186,17 @@ ISR (TWI_vect)
 		case TW_SR_STOP: 							// 0xA0 STOP empfangen
 		default: 	
 			TWCR_RESET; 							// Übertragung beenden, warten bis zur nächsten Adressierung
+			#ifdef TWI_TIMEOUT
+			twi_timeout = 3;						// stop the timeout counter.
+			#endif
 			break;	
 		} //end.switch (TW_STATUS)
 } //end.ISR(TWI_vect)
 
+void twi_reset()
+{
+	TWCR_RESET;
+}
 
 void execute_twi_command(){
 	//1 measure, 2 save eeprom, 3 read eeprom

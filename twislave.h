@@ -71,4 +71,12 @@ void init_twi_slave(uint8_t adr);
 
 void execute_twi_command(void);
 
+void twi_reset(void);
+
+#ifdef TWI_TIMEOUT
+extern volatile uint8_t twi_timeout;	// timeout counter - will be incremented every second 
+extern uint8_t twi_error;		// counter for the twi errors
+#endif
+
+
 #endif //#ifdef _TWISLAVE_H

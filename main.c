@@ -40,6 +40,7 @@ Version.
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
+#include <util/twi.h> 
 
 #include "level_sensor.h"
 #include "config.h"
@@ -93,6 +94,7 @@ int main (){
 	config = init_config();
 	
 	uint16_t sec_timer = 0;
+	uint16_t twi_pin_timeout = 0; 
 	
 	tick = 0;
 	ATOMIC_BLOCK(ATOMIC_FORCEON)
@@ -130,9 +132,29 @@ int main (){
 			tick = 0;
 			process_ioAction(config); // io action processing
 		
-			
+			#ifdef TWI_TIMEOUT
+			if( (PINC & ((1 << PC4)|(1 << PC5))) != ((1 << PC4) | (1 << PC5)) )	// PC4=SDA PC5=SCL
+			{							// one pin is held down.. maybe from another bus user...
+				twi_pin_timeout++;		
+			}
+			else
+			{
+				twi_pin_timeout=0;		// the bus is probably free ;-)
+			}
+			if(twi_pin_timeout > 3000)	// the bus is in use since 3 sec without a break. try to reset the twi
+			{
+		#ifdef TWI_TIMEOUT_DEBUG
+				printf("tw status: %d\r\n", TW_STATUS);
+		#endif
+				twi_reset();
+				twi_error++;
+		#ifdef TWI_TIMEOUT_DEBUG
+				printf("twi error: %d\r\n", twi_error);
+		#endif
+				twi_pin_timeout=0;
+			}
+			#endif			
 		}
-		
 		
 		ATOMIC_BLOCK(ATOMIC_FORCEON)
 		{

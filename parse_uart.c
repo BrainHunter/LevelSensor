@@ -38,6 +38,8 @@ Version.
 #include "uart.h"
 #include "level_sensor.h"
 #include "config.h"
+#include "main.h"
+#include "twislave.h"
 
 
 void parse(char*);
@@ -95,6 +97,13 @@ void parse(char* buffer){
 		//buffer[0] = '\0';
 		return;
 	}
+	#ifdef TWI_TIMEOUT
+	if(!strcmp("e\r",buffer)){		//
+		printf("twi error: %d\r\n", twi_error);
+		//buffer[0] = '\0';
+		return;
+	}
+	#endif
 	if(!strcmp("\r",buffer)){
 		//buffer[0] = '\0';
 		return;

@@ -46,7 +46,7 @@ Configuration:
 
 //#define MEASURE_DEBUG	// Debug message after every automatic measurement
 //#define TWI_DEBUG		// Debug messages for TWI
-
+#define TWI_TIMEOUT_DEBUG		// Debug messages for TWI_TIMEOUT
 
 
 

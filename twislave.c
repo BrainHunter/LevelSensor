@@ -64,13 +64,14 @@
 
 //switched to the non adressed slave mode...
 #define TWCR_RESET 	TWCR = (1<<TWEN)|(1<<TWIE)|(1<<TWINT)|(1<<TWEA)|(0<<TWSTA)|(0<<TWSTO)|(0<<TWWC);  
+#define TWCR_HARD_RESET 	TWCR = (1<<TWEN)|(1<<TWIE)|(1<<TWINT)|(1<<TWEA)|(0<<TWSTA)|(1<<TWSTO)|(0<<TWWC);  
 
 volatile uint8_t command = 0;
 #ifdef TWI_DEBUG
 volatile uint8_t TwiIsr = 0;
 #endif
 #ifdef TWI_TIMEOUT
-volatile uint8_t twi_timeout = 0;
+volatile uint8_t twi_timeout = 3;
 uint8_t twi_error = 0;
 #endif
 
@@ -179,7 +180,11 @@ ISR (TWI_vect)
 					TWCR_NACK; 						// letztes Byte senden, danach NACK erwarten
 				}
 			break;
-
+		
+		case TW_BUS_ERROR:
+			TW_BUS_ERROR;
+			break;
+		
 		case TW_ST_DATA_NACK: 						// 0xC0 Keine Daten mehr gefordert 
 		case TW_SR_DATA_NACK: 						// 0x88 
 		case TW_ST_LAST_DATA: 						// 0xC8  Last data byte in TWDR has been transmitted (TWEA = “0”); ACK has been received
@@ -195,7 +200,7 @@ ISR (TWI_vect)
 
 void twi_reset()
 {
-	TWCR_RESET;
+	TWCR_HARD_RESET;
 }
 
 void execute_twi_command(){

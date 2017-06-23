@@ -1,0 +1,11 @@
+define NETIO_Garten ECMD telnet 192.168.20.15:2701
+attr NETIO_Garten classdefs FUELLSTAND=/opt/fhem/fuellstand.classdef
+attr NETIO_Garten room Interfaces
+
+define Wassertonne_Fuellstand ECMDDevice FUELLSTAND 8
+attr Wassertonne_Fuellstand IODev NETIO_Garten
+attr Wassertonne_Fuellstand room Garten
+attr Wassertonne_Fuellstand verbose 3
+define at_Wassertonne_Fuellstand at +*00:05 get Wassertonne_Fuellstand fuellstand
+attr at_Wassertonne_Fuellstand room Garten
+attr at_Wassertonne_Fuellstand verbose 1
